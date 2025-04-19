@@ -16,7 +16,7 @@ async function analyzeFoodImage(imagePath) {
 
     console.log('开始调用OpenAI分析图片...');
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1",
+      model: "gpt-4o",
       max_tokens: 1000,
       messages: [
         {
