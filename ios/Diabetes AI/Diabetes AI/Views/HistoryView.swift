@@ -4,6 +4,7 @@ struct HistoryView: View {
     @ObservedObject var viewModel: FoodAnalysisViewModel
     @State private var selectedItem: HistoryItem?
     @State private var showingDetail = false
+    @State private var showingClearAlert = false
     
     var body: some View {
         NavigationView {
@@ -24,6 +25,18 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("历史记录")
+            .toolbar {
+                if !viewModel.historyItems.isEmpty {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            showingClearAlert = true
+                        }) {
+                            Text("清空")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showingDetail, onDismiss: {
                 selectedItem = nil
             }) {
@@ -34,6 +47,14 @@ struct HistoryView: View {
                         viewModel: viewModel
                     )
                 }
+            }
+            .alert("确认删除", isPresented: $showingClearAlert) {
+                Button("取消", role: .cancel) { }
+                Button("删除", role: .destructive) {
+                    viewModel.clearHistory()
+                }
+            } message: {
+                Text("确定要清空所有历史记录吗？此操作无法撤销。")
             }
         }
     }
