@@ -5,7 +5,7 @@ class NetworkService {
     // 后端服务器URL（注意：使用实际的IP地址）
     // 使用localhost在iOS模拟器上会有问题，以下使用IP地址代替
     // 如果在模拟器上运行，可以使用127.0.0.1，但真机需要使用电脑在同一网络中的实际IP
-    private let baseURL = "http://127.0.0.1:3000/api"
+    private let baseURL = "https://api.food.zigao.wang/api"
     
     // 单例模式
     static let shared = NetworkService()
