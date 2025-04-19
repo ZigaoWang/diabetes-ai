@@ -50,13 +50,25 @@ class FoodAnalysisViewModel: ObservableObject {
     
     // 语音播报分析结果
     func speakAnalysisResult(_ result: FoodAnalysisResponse.FoodAnalysisData) {
+        // 简化食用建议
+        let suitabilityText: String
+        let lowerSuitability = result.suitabilityIndex.lowercased()
+        if lowerSuitability.contains("适量") || lowerSuitability.contains("适合") || lowerSuitability.contains("低") {
+            suitabilityText = "建议食用"
+        } else if lowerSuitability.contains("谨慎") || lowerSuitability.contains("少量") || lowerSuitability.contains("中") {
+            suitabilityText = "适量食用"
+        } else if lowerSuitability.contains("避免") || lowerSuitability.contains("不适合") || lowerSuitability.contains("高") {
+            suitabilityText = "不建议食用"
+        } else {
+            suitabilityText = "建议参考营养师意见"
+        }
+        
         let speechText = """
-        食物名称：\(result.foodName)。
-        碳水化合物含量：\(result.carbContent)。
-        适合控糖人群：\(result.suitabilityIndex)。
+        食物：\(result.foodName)。
+        食用建议：\(suitabilityText)。
+        碳水含量：\(result.carbContent)。
         建议食用量：\(result.recommendedAmount)。
-        营养价值：\(result.nutrients)。
-        健康小贴士：\(result.healthTips)
+        小贴士：\(result.healthTips)
         """
         
         let utterance = AVSpeechUtterance(string: speechText)

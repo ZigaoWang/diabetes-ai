@@ -6,9 +6,9 @@ const openai = new OpenAI({
 });
 
 /**
- * 分析食物图片并提供健康饮食参考信息
+ * 分析食物图片并提供基本营养信息
  * @param {string} imagePath - 图片路径
- * @returns {Promise<Object>} - 包含食物分析和建议的对象
+ * @returns {Promise<Object>} - 包含食物分析和信息的对象
  */
 async function analyzeFoodImage(imagePath) {
   try {
@@ -21,21 +21,22 @@ async function analyzeFoodImage(imagePath) {
       messages: [
         {
           role: "system",
-          content: `你是一位食物营养分析助手。请分析图片中的食物，并提供以下参考信息（注意：这些只是一般性参考，不构成医疗建议）：
-            1. 食物名称：识别图片中的主要食物
-            2. 碳水化合物含量：估计高/中/低
-            3. 适合控制血糖人群食用指数：参考值，分为"适量食用"/"谨慎少量食用"/"建议避免"
-            4. 建议食用量：一般人群的参考量
-            5. 营养价值：主要营养素简述
-            6. 健康饮食小贴士：与这类食物相关的一般性健康饮食建议
+          content: `请识别图片中的食物，并提供基本营养信息。不要提供任何医疗或健康建议，仅提供客观信息。
+            请包含以下信息：
+            1. 食物名称：图片中展示的是什么食物
+            2. 大致热量：这类食物通常的热量水平（高/中/低）
+            3. 主要营养成分：例如蛋白质、碳水、脂肪等主要成分
+            4. 一般食用量：一般人的参考食用量
+            5. 相关食物：与这种食物类似或可替代的其他食物
             
-            以JSON格式输出，字段包括：foodName, carbContent, suitabilityIndex, recommendedAmount, nutrients, healthTips。
-            请确保输出的是有效的JSON格式。`
+            请以JSON格式输出，包含以下字段：foodName, carbContent, suitabilityIndex, recommendedAmount, nutrients, healthTips。
+            suitabilityIndex字段使用"适量食用"/"适合多数人食用"/"建议少量食用"等中性表述。
+            healthTips字段仅提供一般性的食物信息，不包含健康建议。`
         },
         {
           role: "user",
           content: [
-            { type: "text", text: "请分析这张食物图片，并给出健康饮食参考信息" },
+            { type: "text", text: "这是什么食物？请提供基本信息。" },
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
           ]
         }
@@ -47,6 +48,19 @@ async function analyzeFoodImage(imagePath) {
     // 解析JSON响应
     const content = response.choices[0].message.content;
     console.log('原始响应内容:', content);
+    
+    // 如果AI拒绝分析，提供默认回复
+    if (content.includes("unable to") || content.includes("can't help") || content.includes("cannot")) {
+      console.log('OpenAI拒绝分析，返回默认数据');
+      return {
+        foodName: "未能识别的食物",
+        carbContent: "信息不足",
+        suitabilityIndex: "建议咨询营养师",
+        recommendedAmount: "信息不足",
+        nutrients: "需要更清晰的图片",
+        healthTips: "请尝试上传更清晰的食物图片以获取准确分析"
+      };
+    }
     
     try {
       // 尝试直接解析JSON
@@ -65,24 +79,26 @@ async function analyzeFoodImage(imagePath) {
         return parsedData;
       }
       
-      // 如果仍然无法解析，返回一个有结构的错误对象
-      console.log('无法解析响应为JSON，返回结构化数据');
+      // 如果仍然无法解析，尝试从文本中提取信息
+      console.log('无法解析响应为JSON，尝试从文本提取信息');
       
-      // 尝试从内容中提取关键信息
-      const foodNameMatch = content.match(/食物名称[：:]\s*([^\n]+)/);
-      const carbMatch = content.match(/碳水化合物[^:：]*[：:]\s*([^\n]+)/);
-      const suitabilityMatch = content.match(/适合[^:：]*[：:]\s*([^\n]+)/);
-      const amountMatch = content.match(/建议食用量[：:]\s*([^\n]+)/);
-      const nutrientsMatch = content.match(/营养[^:：]*[：:]\s*([^\n]+)/);
-      const tipsMatch = content.match(/贴士[：:]\s*([^\n]+)/);
+      // 尝试从文本中找到食物名称
+      let foodName = "未能识别食物";
+      if (content.includes("食物") || content.includes("图片")) {
+        const foodMatches = content.match(/是(.*?)(?:。|，|,|\.|$)/);
+        if (foodMatches && foodMatches[1]) {
+          foodName = foodMatches[1].trim();
+        }
+      }
       
+      // 返回一个简单的结果
       return {
-        foodName: foodNameMatch ? foodNameMatch[1].trim() : "未能识别食物",
-        carbContent: carbMatch ? carbMatch[1].trim() : "未知",
-        suitabilityIndex: suitabilityMatch ? suitabilityMatch[1].trim() : "不确定",
-        recommendedAmount: amountMatch ? amountMatch[1].trim() : "参考量不详",
-        nutrients: nutrientsMatch ? nutrientsMatch[1].trim() : "未能识别营养成分",
-        healthTips: tipsMatch ? tipsMatch[1].trim() : "建议咨询营养师获取个性化建议"
+        foodName: foodName,
+        carbContent: "信息不足",
+        suitabilityIndex: "建议咨询营养师获取个性化建议",
+        recommendedAmount: "参考量不详",
+        nutrients: "需要更详细分析",
+        healthTips: "这是" + foodName + "，请咨询专业人士获取更多信息"
       };
     }
   } catch (error) {
