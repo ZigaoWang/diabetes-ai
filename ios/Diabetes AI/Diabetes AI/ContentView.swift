@@ -277,10 +277,10 @@ struct ContentView: View {
                     
                     // 底部信息
                     VStack(spacing: 12) {
-                        Text("科技无障AI")
+                        Text("食物分析助手")
                             .font(.system(size: 20, weight: .semibold))
                         
-                        Text("© 2025 帮助用户更科学地管理饮食")
+                        Text("© 2025 Zigao Wang 王子高")
                             .font(.system(size: 16))
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
